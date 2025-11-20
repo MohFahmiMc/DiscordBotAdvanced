@@ -1,36 +1,46 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Collection } = require('discord.js');
 const fs = require('fs');
-
+const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+
 client.commands = new Collection();
 
 // Load commands
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-for (const file of commandFiles) {
+for(const file of commandFiles){
     const command = require(`./commands/${file}`);
     client.commands.set(command.name, command);
 }
 
-client.on('ready', () => {
-    console.log(`Bot logged in as ${client.user.tag}`);
-    client.user.setActivity("Advanced Bot | Railway + Termux");
+// Ready event
+client.once('ready', () => {
+    console.log(`Bot online: ${client.user.tag}`);
 });
 
-client.on('messageCreate', async message => {
-    if (!message.content.startsWith("!") || message.author.bot) return;
-
-    const args = message.content.slice(1).split(/ +/);
-    const commandName = args.shift().toLowerCase();
-
-    if (!client.commands.has(commandName)) return;
-
+// Interaction create (slash commands)
+client.on('interactionCreate', async interaction => {
+    if(!interaction.isCommand()) return;
+    const command = client.commands.get(interaction.commandName);
+    if(!command) return;
     try {
-        client.commands.get(commandName).execute(message, args);
-    } catch (error) {
-        console.error(error);
-        message.reply('Ada error saat menjalankan command!');
+        await command.execute(interaction);
+    } catch(err) {
+        console.error(err);
+        await interaction.reply({ content: 'Error executing command!', ephemeral: true });
     }
+});
+
+// Message auto-reply
+client.on('messageCreate', message => {
+    if(message.author.bot) return;
+    const content = message.content.toLowerCase();
+    if(content.includes('halo')){
+        message.reply('Halo juga! 👋');
+    }
+    if(content.includes('cara')){
+        message.reply('butuh bantuan? chat helper!');
+    }
+    // Tambahkan kata kunci lain di sini
 });
 
 client.login(process.env.TOKEN);
