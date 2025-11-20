@@ -1,77 +1,210 @@
-require('dotenv').config();
-const { Client, GatewayIntentBits, Collection, REST, Routes } = require('discord.js');
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+require("dotenv").config();
+const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require("discord.js");
 
-client.commands = new Collection();
-
-// =================== COMMANDS ===================
-const commands = [
-  { name: 'ping', description: 'Check latency', execute: async (interaction)=>{ await interaction.reply(`Pong! ${Date.now()-interaction.createdTimestamp}ms`); } },
-  { name: 'say', description: 'Repeat message', options:[{name:'message', type:3, description:'Message', required:true}], execute: async (interaction)=>{ await interaction.reply(interaction.options.getString('message')); } },
-  { name: 'hug', description: 'Send hug', options:[{name:'user', type:6, description:'User', required:true}], execute: async (interaction)=>{ const user = interaction.options.getUser('user'); await interaction.reply(`${interaction.user.username} hugs ${user.username} 🤗`); } },
-  { name: 'pat', description: 'Pat user', options:[{name:'user', type:6, description:'User', required:true}], execute: async (interaction)=>{ const user = interaction.options.getUser('user'); await interaction.reply(`${interaction.user.username} pats ${user.username} 👋`); } },
-  { name: 'joke', description: 'Random joke', execute: async (interaction)=>{ const jokes=["Kenapa programmer nggak suka hujan? Karena takut bug!","Apa bedanya hardware dan software? Hardware bisa dipukul, software cuma error 😅"]; await interaction.reply(jokes[Math.floor(Math.random()*jokes.length)]); } },
-  { name: 'meme', description: 'Random meme', execute: async (interaction)=>{ const memes=["https://i.imgflip.com/1bij.jpg","https://i.imgflip.com/26am.jpg"]; await interaction.reply(memes[Math.floor(Math.random()*memes.length)]); } },
-  { name: 'roll', description: 'Roll a dice', execute: async (interaction)=>{ const n=Math.floor(Math.random()*6)+1; await interaction.reply(`🎲 You rolled a ${n}`); } },
-  { name: 'coinflip', description: 'Flip a coin', execute: async (interaction)=>{ const result=Math.random()<0.5?'Heads':'Tails'; await interaction.reply(`🪙 ${result}`); } },
-  { name: 'trivia', description: 'Random trivia', execute: async (interaction)=>{ const trivia=["Honey never spoils.","Bananas are berries, but strawberries are not."]; await interaction.reply(trivia[Math.floor(Math.random()*trivia.length)]); } },
-  { name: 'serverinfo', description: 'Info server', execute: async (interaction)=>{ const g=interaction.guild; await interaction.reply(`Server: ${g.name}\nMembers: ${g.memberCount}`); } },
-  { name: 'userinfo', description: 'Info user', options:[{name:'user', type:6, description:'User', required:false}], execute: async (interaction)=>{ const u=interaction.options.getUser('user')||interaction.user; await interaction.reply(`User: ${u.tag}\nID: ${u.id}`); } },
-  { name: 'avatar', description: 'Show avatar', options:[{name:'user', type:6, description:'User', required:false}], execute: async (interaction)=>{ const u=interaction.options.getUser('user')||interaction.user; await interaction.reply(u.displayAvatarURL({dynamic:true,size:1024})); } },
-  { name: 'invite', description: 'Invite bot', execute: async (interaction)=>{ await interaction.reply(`Invite: https://discord.com/oauth2/authorize?client_id=${interaction.client.user.id}&scope=bot+applications.commands&permissions=8`); } },
-  { name: 'serverstats', description: 'Server stats', execute: async (interaction)=>{ const g=interaction.guild; await interaction.reply(`Members: ${g.memberCount}, Channels: ${g.channels.cache.size}`); } },
-  { name: 'remind', description: 'Set reminder', options:[{name:'time', type:3, description:'Minutes', required:true},{name:'message', type:3, description:'Message', required:true}], execute: async (interaction)=>{ const t=parseInt(interaction.options.getString('time')); const m=interaction.options.getString('message'); await interaction.reply(`Reminder set for ${t} minute(s)`); setTimeout(()=>interaction.followUp(`⏰ Reminder: ${m}`),t*60000); } },
-  { name: 'sayhi', description: 'Bot says hi', execute: async (interaction)=>{ await interaction.reply(`Hi ${interaction.user.username}! 👋`); } },
-  { name: 'weather', description: 'Weather info', options:[{name:'city',type:3,description:'City',required:true}], execute: async (interaction)=>{ await interaction.reply(`Weather for ${interaction.options.getString('city')} is sunny 🌞 (dummy)`); } },
-  { name: 'translate', description: 'Translate text', options:[{name:'text',type:3,description:'Text',required:true},{name:'lang',type:3,description:'Target language',required:true}], execute: async (interaction)=>{ await interaction.reply(`Translating "${interaction.options.getString('text')}" to ${interaction.options.getString('lang')} (dummy)`); } },
-  { name: 'calc', description: 'Calculator', options:[{name:'expression',type:3,description:'Expression',required:true}], execute: async (interaction)=>{ try{ await interaction.reply(`Result: ${eval(interaction.options.getString('expression'))}`);}catch{await interaction.reply('Invalid expression!');} } },
-  { name: 'kick', description: 'Kick member', options:[{name:'user',type:6,description:'User',required:true}], execute: async (interaction)=>{ const m=interaction.options.getMember('user'); if(!m) return interaction.reply('User not found!'); await m.kick(); await interaction.reply(`${m.user.tag} kicked!`); } },
-  { name: 'ban', description: 'Ban member', options:[{name:'user',type:6,description:'User',required:true}], execute: async (interaction)=>{ const m=interaction.options.getMember('user'); if(!m) return interaction.reply('User not found!'); await m.ban(); await interaction.reply(`${m.user.tag} banned!`); } },
-  { name: 'mute', description: 'Mute member', options:[{name:'user',type:6,description:'User',required:true}], execute: async (interaction)=>{ await interaction.reply('Mute command placeholder'); } },
-  { name: 'unmute', description: 'Unmute member', options:[{name:'user',type:6,description:'User',required:true}], execute: async (interaction)=>{ await interaction.reply('Unmute command placeholder'); } },
-  { name: 'lockdown', description: 'Lock channel', execute: async (interaction)=>{ await interaction.reply('Lockdown placeholder'); } },
-  { name: 'unlock', description: 'Unlock channel', execute: async (interaction)=>{ await interaction.reply('Unlock placeholder'); } },
-  { name: 'greet', description: 'Greet', execute: async (interaction)=>{ await interaction.reply('Hello! Welcome to the server!'); } },
-  { name: 'ai', description: 'AI response', options:[{name:'question',type:3,description:'Question',required:true}], execute: async (interaction)=>{ await interaction.reply(`AI says: "${interaction.options.getString('question')}" (dummy)`); } }
-];
-
-// Register commands in Collection
-commands.forEach(c=>client.commands.set(c.name,c));
-
-// =================== READY ===================
-client.once('ready', async ()=>{
-    console.log(`Bot online: ${client.user.tag}`);
-    client.user.setActivity('Scarily Group', { type:'PLAYING' });
-
-    // Optional: register commands to guild for testing
-    const rest = new REST({ version:'10' }).setToken(process.env.TOKEN);
-    try{
-        await rest.put(
-            Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-            { body: commands.map(c=>{
-                return {name:c.name, description:c.description, options:c.options||[]};
-            }) }
-        );
-        console.log('Slash commands registered!');
-    }catch(e){ console.error(e); }
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers
+  ]
 });
 
-// =================== INTERACTION ===================
-client.on('interactionCreate', async interaction=>{
-    if(!interaction.isCommand()) return;
-    const command = client.commands.get(interaction.commandName);
-    if(!command) return;
-    try{ await command.execute(interaction); }
-    catch(err){ console.error(err); await interaction.reply({ content:'Error executing command!', ephemeral:true }); }
+const prefix = "!";
+
+// Status
+client.on("ready", () => {
+  console.log(`Bot aktif sebagai ${client.user.tag}`);
+  client.user.setActivity("with Scarily ID Group", { type: 0 }); // PLAYING
 });
 
-// =================== AUTO-REPLY ===================
-client.on('messageCreate', message=>{
-    if(message.author.bot) return;
-    const m=message.content.toLowerCase();
-    if(m.includes('halo')) message.reply('Halo juga! 👋');
-    if(m.includes('cara')) message.reply('butuh bantuan? tag helper');
+// Anti-crash
+process.on("unhandledRejection", (err) => console.log("Unhandled:", err));
+process.on("uncaughtException", (err) => console.log("Uncaught:", err));
+
+// -----------------------------
+//        COMMAND HANDLER
+// -----------------------------
+client.on("messageCreate", async (msg) => {
+  if (!msg.content.startsWith(prefix) || msg.author.bot) return;
+
+  const args = msg.content.slice(prefix.length).trim().split(/ +/);
+  const cmd = args.shift().toLowerCase();
+
+  // ---------------------------------
+  // 🛠 Moderation Commands
+  // ---------------------------------
+
+  // Kick
+  if (cmd === "kick") {
+    if (!msg.member.permissions.has(PermissionsBitField.Flags.KickMembers))
+      return msg.reply("❌ Kamu tidak punya izin Kick!");
+
+    const target = msg.mentions.members.first();
+    if (!target) return msg.reply("Tag anggota yang ingin di-kick.");
+
+    await target.kick();
+    msg.channel.send(`👢 Berhasil Kick: **${target.user.tag}**`);
+  }
+
+  // Ban
+  if (cmd === "ban") {
+    if (!msg.member.permissions.has(PermissionsBitField.Flags.BanMembers))
+      return msg.reply("❌ Kamu tidak punya izin Ban!");
+
+    const target = msg.mentions.members.first();
+    if (!target) return msg.reply("Tag anggota yang ingin di-ban.");
+
+    await target.ban();
+    msg.channel.send(`🔨 Berhasil Ban: **${target.user.tag}**`);
+  }
+
+  // Unban
+  if (cmd === "unban") {
+    if (!msg.member.permissions.has(PermissionsBitField.Flags.BanMembers))
+      return msg.reply("❌ Kamu tidak punya izin Unban!");
+
+    const userId = args[0];
+    if (!userId) return msg.reply("Masukkan User ID untuk unban.");
+
+    msg.guild.members.unban(userId)
+      .then(() => msg.channel.send(`♻️ Berhasil Unban ID: ${userId}`))
+      .catch(() => msg.reply("ID tidak valid / user tidak di-ban."));
+  }
+
+  // Clear
+  if (cmd === "clear" || cmd === "purge") {
+    if (!msg.member.permissions.has(PermissionsBitField.Flags.ManageMessages))
+      return msg.reply("❌ Kamu tidak punya izin Manage Messages.");
+
+    const jumlah = parseInt(args[0]);
+    if (!jumlah) return msg.reply("Masukkan jumlah pesan!");
+
+    await msg.channel.bulkDelete(jumlah, true);
+    msg.channel.send(`🧹 Terhapus **${jumlah}** pesan.`);
+  }
+
+  // Slowmode
+  if (cmd === "slowmode") {
+    if (!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels))
+      return msg.reply("❌ Kamu tidak punya izin.");
+
+    const detik = parseInt(args[0]);
+    if (isNaN(detik)) return msg.reply("Masukkan angka detik!");
+
+    msg.channel.setRateLimitPerUser(detik);
+    msg.channel.send(`🐌 Slowmode di-set: **${detik} detik**`);
+  }
+
+  // Lock
+  if (cmd === "lock") {
+    if (!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels))
+      return msg.reply("❌ Kamu tidak punya izin.");
+
+    msg.channel.permissionOverwrites.edit(msg.guild.roles.everyone, { SendMessages: false });
+    msg.channel.send("🔒 Channel dikunci!");
+  }
+
+  // Unlock
+  if (cmd === "unlock") {
+    if (!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels))
+      return msg.reply("❌ Kamu tidak punya izin.");
+
+    msg.channel.permissionOverwrites.edit(msg.guild.roles.everyone, { SendMessages: true });
+    msg.channel.send("🔓 Channel dibuka!");
+  }
+
+  // Warn
+  if (cmd === "warn") {
+    const member = msg.mentions.members.first();
+    if (!member) return msg.reply("Tag user!");
+
+    const reason = args.slice(1).join(" ") || "Tidak ada alasan";
+
+    msg.channel.send(`⚠️ **${member.user.tag}** diberi peringatan!\nAlasan: ${reason}`);
+  }
+
+  // Mute (Role-based)
+  if (cmd === "mute") {
+    const member = msg.mentions.members.first();
+    if (!member) return msg.reply("Tag user!");
+
+    let role = msg.guild.roles.cache.find(r => r.name === "Muted");
+
+    if (!role) {
+      role = await msg.guild.roles.create({
+        name: "Muted",
+        permissions: []
+      });
+
+      msg.guild.channels.cache.forEach(ch => {
+        ch.permissionOverwrites.edit(role, { SendMessages: false });
+      });
+    }
+
+    await member.roles.add(role);
+    msg.channel.send(`🔇 Berhasil mute: **${member.user.tag}**`);
+  }
+
+  // Unmute
+  if (cmd === "unmute") {
+    const member = msg.mentions.members.first();
+    if (!member) return msg.reply("Tag user!");
+
+    const role = msg.guild.roles.cache.find(r => r.name === "Muted");
+    if (!role) return msg.reply("Role Muted tidak ditemukan.");
+
+    await member.roles.remove(role);
+    msg.channel.send(`🔊 Berhasil unmute: **${member.user.tag}**`);
+  }
+
+  // -----------------------------
+  // ❗ Informasi Commands
+  // -----------------------------
+
+  if (cmd === "help") {
+    const embed = new EmbedBuilder()
+      .setTitle("⚙️ Moderation Bot Commands")
+      .setColor("Aqua")
+      .setDescription(`
+**Moderation**
+> !kick @user  
+> !ban @user  
+> !unban <id>  
+> !clear <jumlah>  
+> !slowmode <detik>  
+> !lock  
+> !unlock  
+> !warn @user  
+> !mute @user  
+> !unmute @user  
+
+**Info**
+> !ping  
+> !avatar  
+> !server
+      `)
+      .setFooter({ text: "Scarily ID Group Moderation Bot" });
+
+    msg.channel.send({ embeds: [embed] });
+  }
+
+  // Ping
+  if (cmd === "ping") {
+    msg.reply(`Pong! Latency: **${client.ws.ping}ms**`);
+  }
+
+  // Avatar
+  if (cmd === "avatar") {
+    const user = msg.mentions.users.first() || msg.author;
+    msg.reply(user.displayAvatarURL({ dynamic: true, size: 2048 }));
+  }
+
+  // Server Info
+  if (cmd === "server") {
+    msg.reply(`📌 Nama Server: **${msg.guild.name}**\n👥 Member: **${msg.guild.memberCount}**`);
+  }
 });
 
-// LOGIN
+// Login bot
 client.login(process.env.TOKEN);
