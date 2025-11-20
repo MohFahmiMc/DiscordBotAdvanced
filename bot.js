@@ -1,295 +1,77 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Collection } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, REST, Routes } = require('discord.js');
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
 client.commands = new Collection();
 
-// === Semua command digabung di sini ===
+// =================== COMMANDS ===================
 const commands = [
-    // === Fun / Interaction ===
-    {
-        name: 'ping',
-        description: 'Check latency',
-        execute: async (interaction) => {
-            await interaction.reply(`Pong! ${Date.now() - interaction.createdTimestamp}ms`);
-        }
-    },
-    {
-        name: 'say',
-        description: 'Bot repeat message',
-        options: [{ name: 'message', type: 3, description: 'Message to repeat', required: true }],
-        execute: async (interaction) => {
-            const msg = interaction.options.getString('message');
-            await interaction.reply(msg);
-        }
-    },
-    {
-        name: 'hug',
-        description: 'Send hug to someone',
-        options: [{ name: 'user', type: 6, description: 'User to hug', required: true }],
-        execute: async (interaction) => {
-            const user = interaction.options.getUser('user');
-            await interaction.reply(`${interaction.user.username} gives a hug to ${user.username} 🤗`);
-        }
-    },
-    {
-        name: 'pat',
-        description: 'Pat someone',
-        options: [{ name: 'user', type: 6, description: 'User to pat', required: true }],
-        execute: async (interaction) => {
-            const user = interaction.options.getUser('user');
-            await interaction.reply(`${interaction.user.username} pats ${user.username} 👋`);
-        }
-    },
-    {
-        name: 'joke',
-        description: 'Random joke',
-        execute: async (interaction) => {
-            const jokes = [
-                "Kenapa programmer nggak suka hujan? Karena takut bug!",
-                "Apa bedanya hardware dan software? Hardware bisa dipukul, software cuma error 😅"
-            ];
-            const joke = jokes[Math.floor(Math.random() * jokes.length)];
-            await interaction.reply(joke);
-        }
-    },
-    {
-        name: 'meme',
-        description: 'Random meme',
-        execute: async (interaction) => {
-            const memes = [
-                "https://i.imgflip.com/1bij.jpg",
-                "https://i.imgflip.com/26am.jpg"
-            ];
-            const meme = memes[Math.floor(Math.random() * memes.length)];
-            await interaction.reply(meme);
-        }
-    },
-    {
-        name: 'roll',
-        description: 'Roll a dice',
-        execute: async (interaction) => {
-            const number = Math.floor(Math.random() * 6) + 1;
-            await interaction.reply(`🎲 You rolled a ${number}`);
-        }
-    },
-    {
-        name: 'coinflip',
-        description: 'Flip a coin',
-        execute: async (interaction) => {
-            const result = Math.random() < 0.5 ? 'Heads' : 'Tails';
-            await interaction.reply(`🪙 ${result}`);
-        }
-    },
-    {
-        name: 'trivia',
-        description: 'Random trivia',
-        execute: async (interaction) => {
-            const trivia = [
-                "Honey never spoils.",
-                "Bananas are berries, but strawberries are not."
-            ];
-            await interaction.reply(trivia[Math.floor(Math.random() * trivia.length)]);
-        }
-    },
-    // === Utility / Info ===
-    {
-        name: 'serverinfo',
-        description: 'Info about server',
-        execute: async (interaction) => {
-            const guild = interaction.guild;
-            await interaction.reply(`Server: ${guild.name}\nMembers: ${guild.memberCount}`);
-        }
-    },
-    {
-        name: 'userinfo',
-        description: 'Info about a user',
-        options: [{ name: 'user', type: 6, description: 'Select user', required: false }],
-        execute: async (interaction) => {
-            const user = interaction.options.getUser('user') || interaction.user;
-            await interaction.reply(`User: ${user.tag}\nID: ${user.id}`);
-        }
-    },
-    {
-        name: 'avatar',
-        description: 'Show user avatar',
-        options: [{ name: 'user', type: 6, description: 'Select user', required: false }],
-        execute: async (interaction) => {
-            const user = interaction.options.getUser('user') || interaction.user;
-            await interaction.reply(user.displayAvatarURL({ dynamic: true, size: 1024 }));
-        }
-    },
-    {
-        name: 'invite',
-        description: 'Invite link for bot',
-        execute: async (interaction) => {
-            await interaction.reply(`Invite me: https://discord.com/oauth2/authorize?client_id=${interaction.client.user.id}&scope=bot+applications.commands&permissions=8`);
-        }
-    },
-    {
-        name: 'serverstats',
-        description: 'Server stats',
-        execute: async (interaction) => {
-            const guild = interaction.guild;
-            await interaction.reply(`Members: ${guild.memberCount}, Channels: ${guild.channels.cache.size}`);
-        }
-    },
-    {
-        name: 'remind',
-        description: 'Set reminder',
-        options: [
-            { name: 'time', type: 3, description: 'Time in minutes', required: true },
-            { name: 'message', type: 3, description: 'Reminder message', required: true }
-        ],
-        execute: async (interaction) => {
-            const time = parseInt(interaction.options.getString('time'));
-            const msg = interaction.options.getString('message');
-            await interaction.reply(`Reminder set for ${time} minute(s)!`);
-            setTimeout(() => interaction.followUp(`⏰ Reminder: ${msg}`), time * 60000);
-        }
-    },
-    {
-        name: 'sayhi',
-        description: 'Bot says hi',
-        execute: async (interaction) => {
-            await interaction.reply(`Hi ${interaction.user.username}! 👋`);
-        }
-    },
-    {
-        name: 'weather',
-        description: 'Get weather info',
-        options: [{ name: 'city', type: 3, description: 'City name', required: true }],
-        execute: async (interaction) => {
-            const city = interaction.options.getString('city');
-            await interaction.reply(`Weather info for ${city} is sunny 🌞 (dummy example)`);
-        }
-    },
-    {
-        name: 'translate',
-        description: 'Translate text',
-        options: [
-            { name: 'text', type: 3, description: 'Text to translate', required: true },
-            { name: 'lang', type: 3, description: 'Target language', required: true }
-        ],
-        execute: async (interaction) => {
-            const text = interaction.options.getString('text');
-            const lang = interaction.options.getString('lang');
-            await interaction.reply(`Translating "${text}" to ${lang} (dummy example)`);
-        }
-    },
-    {
-        name: 'calc',
-        description: 'Simple calculator',
-        options: [{ name: 'expression', type: 3, description: 'Expression to calculate', required: true }],
-        execute: async (interaction) => {
-            const expr = interaction.options.getString('expression');
-            try { 
-                const result = eval(expr);
-                await interaction.reply(`Result: ${result}`);
-            } catch { 
-                await interaction.reply('Invalid expression!'); 
-            }
-        }
-    },
-    // === Moderation ===
-    {
-        name: 'kick',
-        description: 'Kick a member',
-        options: [{ name: 'user', type: 6, description: 'User to kick', required: true }],
-        execute: async (interaction) => {
-            const member = interaction.options.getMember('user');
-            if(!member) return interaction.reply('User not found!');
-            await member.kick();
-            await interaction.reply(`${member.user.tag} was kicked!`);
-        }
-    },
-    {
-        name: 'ban',
-        description: 'Ban a member',
-        options: [{ name: 'user', type: 6, description: 'User to ban', required: true }],
-        execute: async (interaction) => {
-            const member = interaction.options.getMember('user');
-            if(!member) return interaction.reply('User not found!');
-            await member.ban();
-            await interaction.reply(`${member.user.tag} was banned!`);
-        }
-    },
-    {
-        name: 'mute',
-        description: 'Mute a member',
-        options: [{ name: 'user', type: 6, description: 'User to mute', required: true }],
-        execute: async (interaction) => {
-            const member = interaction.options.getMember('user');
-            if(!member) return interaction.reply('User not found!');
-            await interaction.reply(`${member.user.tag} has been muted! (dummy example)`);
-        }
-    },
-    {
-        name: 'unmute',
-        description: 'Unmute a member',
-        options: [{ name: 'user', type: 6, description: 'User to unmute', required: true }],
-        execute: async (interaction) => {
-            const member = interaction.options.getMember('user');
-            if(!member) return interaction.reply('User not found!');
-            await interaction.reply(`${member.user.tag} has been unmuted! (dummy example)`);
-        }
-    },
-    {
-        name: 'lockdown',
-        description: 'Lock a channel',
-        execute: async (interaction) => {
-            await interaction.reply('Channel locked! (dummy example)');
-        }
-    },
-    {
-        name: 'unlock',
-        description: 'Unlock a channel',
-        execute: async (interaction) => {
-            await interaction.reply('Channel unlocked! (dummy example)');
-        }
-    },
-    {
-        name: 'greet',
-        description: 'Bot greet message',
-        execute: async (interaction) => {
-            await interaction.reply('Hello! Welcome to the server!');
-        }
-    },
-    {
-        name: 'ai',
-        description: 'AI response',
-        options: [{ name: 'question', type: 3, description: 'Ask me anything', required: true }],
-        execute: async (interaction) => {
-            const q = interaction.options.getString('question');
-            await interaction.reply(`AI says: "${q}" (dummy AI response)`);
-        }
-    }
+  { name: 'ping', description: 'Check latency', execute: async (interaction)=>{ await interaction.reply(`Pong! ${Date.now()-interaction.createdTimestamp}ms`); } },
+  { name: 'say', description: 'Repeat message', options:[{name:'message', type:3, description:'Message', required:true}], execute: async (interaction)=>{ await interaction.reply(interaction.options.getString('message')); } },
+  { name: 'hug', description: 'Send hug', options:[{name:'user', type:6, description:'User', required:true}], execute: async (interaction)=>{ const user = interaction.options.getUser('user'); await interaction.reply(`${interaction.user.username} hugs ${user.username} 🤗`); } },
+  { name: 'pat', description: 'Pat user', options:[{name:'user', type:6, description:'User', required:true}], execute: async (interaction)=>{ const user = interaction.options.getUser('user'); await interaction.reply(`${interaction.user.username} pats ${user.username} 👋`); } },
+  { name: 'joke', description: 'Random joke', execute: async (interaction)=>{ const jokes=["Kenapa programmer nggak suka hujan? Karena takut bug!","Apa bedanya hardware dan software? Hardware bisa dipukul, software cuma error 😅"]; await interaction.reply(jokes[Math.floor(Math.random()*jokes.length)]); } },
+  { name: 'meme', description: 'Random meme', execute: async (interaction)=>{ const memes=["https://i.imgflip.com/1bij.jpg","https://i.imgflip.com/26am.jpg"]; await interaction.reply(memes[Math.floor(Math.random()*memes.length)]); } },
+  { name: 'roll', description: 'Roll a dice', execute: async (interaction)=>{ const n=Math.floor(Math.random()*6)+1; await interaction.reply(`🎲 You rolled a ${n}`); } },
+  { name: 'coinflip', description: 'Flip a coin', execute: async (interaction)=>{ const result=Math.random()<0.5?'Heads':'Tails'; await interaction.reply(`🪙 ${result}`); } },
+  { name: 'trivia', description: 'Random trivia', execute: async (interaction)=>{ const trivia=["Honey never spoils.","Bananas are berries, but strawberries are not."]; await interaction.reply(trivia[Math.floor(Math.random()*trivia.length)]); } },
+  { name: 'serverinfo', description: 'Info server', execute: async (interaction)=>{ const g=interaction.guild; await interaction.reply(`Server: ${g.name}\nMembers: ${g.memberCount}`); } },
+  { name: 'userinfo', description: 'Info user', options:[{name:'user', type:6, description:'User', required:false}], execute: async (interaction)=>{ const u=interaction.options.getUser('user')||interaction.user; await interaction.reply(`User: ${u.tag}\nID: ${u.id}`); } },
+  { name: 'avatar', description: 'Show avatar', options:[{name:'user', type:6, description:'User', required:false}], execute: async (interaction)=>{ const u=interaction.options.getUser('user')||interaction.user; await interaction.reply(u.displayAvatarURL({dynamic:true,size:1024})); } },
+  { name: 'invite', description: 'Invite bot', execute: async (interaction)=>{ await interaction.reply(`Invite: https://discord.com/oauth2/authorize?client_id=${interaction.client.user.id}&scope=bot+applications.commands&permissions=8`); } },
+  { name: 'serverstats', description: 'Server stats', execute: async (interaction)=>{ const g=interaction.guild; await interaction.reply(`Members: ${g.memberCount}, Channels: ${g.channels.cache.size}`); } },
+  { name: 'remind', description: 'Set reminder', options:[{name:'time', type:3, description:'Minutes', required:true},{name:'message', type:3, description:'Message', required:true}], execute: async (interaction)=>{ const t=parseInt(interaction.options.getString('time')); const m=interaction.options.getString('message'); await interaction.reply(`Reminder set for ${t} minute(s)`); setTimeout(()=>interaction.followUp(`⏰ Reminder: ${m}`),t*60000); } },
+  { name: 'sayhi', description: 'Bot says hi', execute: async (interaction)=>{ await interaction.reply(`Hi ${interaction.user.username}! 👋`); } },
+  { name: 'weather', description: 'Weather info', options:[{name:'city',type:3,description:'City',required:true}], execute: async (interaction)=>{ await interaction.reply(`Weather for ${interaction.options.getString('city')} is sunny 🌞 (dummy)`); } },
+  { name: 'translate', description: 'Translate text', options:[{name:'text',type:3,description:'Text',required:true},{name:'lang',type:3,description:'Target language',required:true}], execute: async (interaction)=>{ await interaction.reply(`Translating "${interaction.options.getString('text')}" to ${interaction.options.getString('lang')} (dummy)`); } },
+  { name: 'calc', description: 'Calculator', options:[{name:'expression',type:3,description:'Expression',required:true}], execute: async (interaction)=>{ try{ await interaction.reply(`Result: ${eval(interaction.options.getString('expression'))}`);}catch{await interaction.reply('Invalid expression!');} } },
+  { name: 'kick', description: 'Kick member', options:[{name:'user',type:6,description:'User',required:true}], execute: async (interaction)=>{ const m=interaction.options.getMember('user'); if(!m) return interaction.reply('User not found!'); await m.kick(); await interaction.reply(`${m.user.tag} kicked!`); } },
+  { name: 'ban', description: 'Ban member', options:[{name:'user',type:6,description:'User',required:true}], execute: async (interaction)=>{ const m=interaction.options.getMember('user'); if(!m) return interaction.reply('User not found!'); await m.ban(); await interaction.reply(`${m.user.tag} banned!`); } },
+  { name: 'mute', description: 'Mute member', options:[{name:'user',type:6,description:'User',required:true}], execute: async (interaction)=>{ await interaction.reply('Mute command placeholder'); } },
+  { name: 'unmute', description: 'Unmute member', options:[{name:'user',type:6,description:'User',required:true}], execute: async (interaction)=>{ await interaction.reply('Unmute command placeholder'); } },
+  { name: 'lockdown', description: 'Lock channel', execute: async (interaction)=>{ await interaction.reply('Lockdown placeholder'); } },
+  { name: 'unlock', description: 'Unlock channel', execute: async (interaction)=>{ await interaction.reply('Unlock placeholder'); } },
+  { name: 'greet', description: 'Greet', execute: async (interaction)=>{ await interaction.reply('Hello! Welcome to the server!'); } },
+  { name: 'ai', description: 'AI response', options:[{name:'question',type:3,description:'Question',required:true}], execute: async (interaction)=>{ await interaction.reply(`AI says: "${interaction.options.getString('question')}" (dummy)`); } }
 ];
 
-// Register all commands
-for(const cmd of commands) client.commands.set(cmd.name, cmd);
+// Register commands in Collection
+commands.forEach(c=>client.commands.set(c.name,c));
 
-// Ready event
-client.once('ready', () => {
+// =================== READY ===================
+client.once('ready', async ()=>{
     console.log(`Bot online: ${client.user.tag}`);
-    client.user.setActivity('Scarily Group', { type: 'PLAYING' });
+    client.user.setActivity('Scarily Group', { type:'PLAYING' });
+
+    // Optional: register commands to guild for testing
+    const rest = new REST({ version:'10' }).setToken(process.env.TOKEN);
+    try{
+        await rest.put(
+            Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+            { body: commands.map(c=>{
+                return {name:c.name, description:c.description, options:c.options||[]};
+            }) }
+        );
+        console.log('Slash commands registered!');
+    }catch(e){ console.error(e); }
 });
 
-// Interaction create
-client.on('interactionCreate', async interaction => {
+// =================== INTERACTION ===================
+client.on('interactionCreate', async interaction=>{
     if(!interaction.isCommand()) return;
     const command = client.commands.get(interaction.commandName);
     if(!command) return;
-    try { await command.execute(interaction); } 
-    catch(err) { console.error(err); await interaction.reply({ content: 'Error executing command!', ephemeral: true }); }
+    try{ await command.execute(interaction); }
+    catch(err){ console.error(err); await interaction.reply({ content:'Error executing command!', ephemeral:true }); }
 });
 
-// Auto-reply
-client.on('messageCreate', message => {
+// =================== AUTO-REPLY ===================
+client.on('messageCreate', message=>{
     if(message.author.bot) return;
-    const msg = message.content.toLowerCase();
-    if(msg.includes('halo')) message.reply('Halo juga! 👋');
-    if(msg.includes('apa kabar')) message.reply('Baik, kamu sendiri? 😄');
+    const m=message.content.toLowerCase();
+    if(m.includes('halo')) message.reply('Halo juga! 👋');
+    if(m.includes('cara')) message.reply('butuh bantuan? tag helper');
 });
 
+// LOGIN
 client.login(process.env.TOKEN);
